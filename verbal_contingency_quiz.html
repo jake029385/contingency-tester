@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lidcombe Verbal Contingencies Drill</title>
+<style>
+  :root{
+    --bg: #0e1726;
+    --bg2: #131f33;
+    --card: #ffffff;
+    --text: #0f1225;
+    --muted: #5b667a;
+    --primary: #6c5ce7;
+    --primary-700:#5646d6;
+    --accent:#00c2ff;
+    --success:#2ecc71;
+    --danger:#ff6b6b;
+    --warning:#f2c94c;
+    --shadow: 0 10px 25px rgba(0,0,0,.18);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    color: var(--text);
+    background:
+      radial-gradient(1200px 800px at 80% -200px, rgba(0,194,255,.25), transparent 60%),
+      radial-gradient(900px 700px at -200px 80%, rgba(108,92,231,.25), transparent 60%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .app{
+    width:min(900px, 100%);
+  }
+  .card{
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  header{
+    padding: 22px 26px;
+    background: linear-gradient(135deg, rgba(108,92,231,.15), rgba(0,194,255,.15));
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  header h1{
+    margin:0;
+    font-size: clamp(20px, 2.2vw, 28px);
+    letter-spacing:.2px;
+  }
+  header p{
+    margin:.35rem 0 0;
+    color: var(--muted);
+    font-size: clamp(13px, 1.5vw, 15px);
+  }
+  .progress{
+    margin: 18px 26px 0;
+  }
+  .progress-bar{
+    height: 10px;
+    background: #eef1f6;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-bar > span{
+    display:block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width .35s ease;
+  }
+  .progress-meta{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  main{
+    padding: 26px;
+  }
+  .question{
+    font-size: clamp(18px, 2.3vw, 22px);
+    line-height: 1.45;
+    margin: 8px 0 18px;
+  }
+  .question em{
+    background: linear-gradient(120deg, rgba(108,92,231,.12), rgba(0,194,255,.12));
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-style: normal;
+  }
+  .hint{
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
+  .grid{
+    display:grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+  @media (max-width: 620px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+  .option{
+    padding: 14px 16px;
+    background: #f7f9fc;
+    border: 1px solid #e7ebf3;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: transform .05s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    position: relative;
+  }
+  .option:hover{
+    transform: translateY(-1px);
+    border-color: #d8def0;
+    box-shadow: 0 6px 16px rgba(17, 38, 146, .08);
+  }
+  .option:active{ transform: translateY(0); }
+  .option[disabled]{
+    cursor: not-allowed;
+    opacity: .9;
+  }
+  .option .tag{
+    display:inline-block;
+    font-size: 12px;
+    color: #4c5a71;
+    background: #eaf2ff;
+    border: 1px solid #d9e6ff;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+  .option .title{
+    font-weight: 600;
+    color: #182235;
+    margin-bottom: 2px;
+  }
+  .option .desc{
+    color: #5b667a;
+    font-size: 13px;
+  }
+  .option.correct{
+    border-color: rgba(46,204,113,.7);
+    background: linear-gradient(0deg, rgba(46,204,113,.08), rgba(46,204,113,.08)), #f7fff9;
+  }
+  .option.incorrect{
+    border-color: rgba(255,107,107,.7);
+    background: linear-gradient(0deg, rgba(255,107,107,.07), rgba(255,107,107,.07)), #fff8f8;
+  }
+  .feedback{
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e9eef6;
+    border-radius: 12px;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback .status{
+    font-weight: 700;
+    margin-right: 8px;
+  }
+  .actions{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-top: 18px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn{
+    appearance: none;
+    border: none;
+    padding: 12px 16px;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight:600;
+    letter-spacing:.2px;
+    box-shadow: 0 8px 18px rgba(108,92,231,.35);
+    transition: transform .05s ease, background .15s ease, box-shadow .15s ease, opacity .2s ease;
+  }
+  .btn:hover{
+    background: var(--primary-700);
+    box-shadow: 0 8px 22px rgba(108,92,231,.45);
+    transform: translateY(-1px);
+  }
+  .btn:active{ transform: translateY(0); }
+  .btn.secondary{
+    background: #eef1f7;
+    color: #2d3955;
+    box-shadow: none;
+  }
+  .btn.link{
+    background: transparent;
+    color: var(--primary);
+    box-shadow:none;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    color:#44516a;
+    background:#eef3ff;
+    border:1px solid #dfe8ff;
+    border-radius:999px;
+    padding:6px 10px;
+    font-size:12px;
+  }
+  .result{
+    padding: 26px;
+    display:none;
+  }
+  .result h2{
+    margin: 0 0 8px;
+  }
+  .result .summary{
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #e7ebf3 inset;
+  }
+  .table th, .table td{
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eef1f6;
+    font-size: 14px;
+  }
+  .table th{
+    background: #f8faff;
+    color: #33415e;
+    font-weight: 700;
+  }
+  .badge{
+    display:inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing:.2px;
+    border:1px solid transparent;
+  }
+  .badge.ok{ background: #e8f8ef; color: #1e7e4a; border-color:#cfeedd; }
+  .badge.no{ background: #ffecec; color: #b93a3a; border-color:#ffd2d2; }
+  footer{
+    text-align:center;
+    color:#cbd3e4;
+    font-size: 12px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <header>
+        <h1>Lidcombe Verbal Contingencies Drill</h1>
+        <p>Identify the verbal contingency used in each statement. <span class="pill" title="Praise, Self-eval, Ack. fluent, Ack. stuttered, Self-correction">5 types</span></p>
+        <div class="progress" aria-label="Progress">
+          <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+            <span id="progressFill"></span>
+          </div>
+          <div class="progress-meta">
+            <div id="progressText">Question 1 of 15</div>
+            <div id="scoreText">Score: 0</div>
+          </div>
+        </div>
+      </header>
+      <main id="quiz">
+        <div class="hint">Statement</div>
+        <div class="question" id="statement">Loading…</div>
+        <div class="hint">Choose the matching verbal contingency:</div>
+        <div class="grid" id="options"></div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="actions">
+          <button class="btn secondary" id="showHelp" type="button">What are the 5 types?</button>
+          <div style="flex:1"></div>
+          <button class="btn" id="nextBtn" type="button" disabled>Next</button>
+        </div>
+      </main>
+      <section class="result" id="result">
+        <h2>All done!</h2>
+        <div class="summary" id="finalSummary"></div>
+        <div id="breakdown"></div>
+        <table class="table" id="reviewTable" aria-label="Review your answers">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Statement</th>
+              <th>Your answer</th>
+              <th>Correct</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="actions" style="margin-top:18px;">
+          <button class="btn" id="retryBtn" type="button">Try again</button>
+          <button class="btn link" id="shuffleBtn" type="button">Shuffle statements</button>
+        </div>
+      </section>
+    </div>
+    <footer>Designed for quick practice—no data stored.</footer>
+  </div>
+
+<script>
+  (() => {
+    "use strict";
+
+    // Category catalog
+    const CATEGORIES = [
+      { id: "praise", label: "Praise", desc: "Positive evaluation of smooth speech." },
+      { id: "self_eval", label: "Request for self-evaluation", desc: "Asks the child to judge their own speech." },
+      { id: "ack_fluent", label: "Acknowledgement of fluent speech", desc: "Neutral description of fluency." },
+      { id: "ack_stuttered", label: "Acknowledgement of stuttered speech", desc: "Neutral description of disfluency." },
+      { id: "self_correct", label: "Request for self-correction", desc: "Asks the child to try again more smoothly." }
+    ];
+
+    // 15 statements (3 per category)
+    const BANK = [
+      // Praise
+      { text: "Great smooth talking!", type: "praise" },
+      { text: "Nice job—your words were really easy to listen to.", type: "praise" },
+      { text: "I love how smoothly you said that!", type: "praise" },
+      // Acknowledgement of fluent speech
+      { text: "That was smooth speech.", type: "ack_fluent" },
+      { text: "No bumps in that sentence.", type: "ack_fluent" },
+      { text: "Those words were fluent.", type: "ack_fluent" },
+      // Acknowledgement of stuttered speech
+      { text: "That one was a little bumpy.", type: "ack_stuttered" },
+      { text: "I heard some stuttering there.", type: "ack_stuttered" },
+      { text: "That wasn’t smooth speech.", type: "ack_stuttered" },
+      // Request for self-evaluation
+      { text: "Was that smooth or bumpy?", type: "self_eval" },
+      { text: "How do you think that one sounded?", type: "self_eval" },
+      { text: "Do you think there were any bumps in that?", type: "self_eval" },
+      // Request for self-correction
+      { text: "Can you try that again smoothly?", type: "self_correct" },
+      { text: "Say that sentence again without the bumps.", type: "self_correct" },
+      { text: "Please try ‘I want the red truck’ one more time with smooth speech.", type: "self_correct" },
+    ];
+
+    // Elements
+    const statementEl = document.getElementById("statement");
+    const optionsEl = document.getElementById("options");
+    const feedbackEl = document.getElementById("feedback");
+    const nextBtn = document.getElementById("nextBtn");
+    const progressFill = document.getElementById("progressFill");
+    const progressText = document.getElementById("progressText");
+    const scoreText = document.getElementById("scoreText");
+    const resultEl = document.getElementById("result");
+    const quizEl = document.getElementById("quiz");
+    const reviewBody = document.querySelector("#reviewTable tbody");
+    const finalSummary = document.getElementById("finalSummary");
+    const breakdownEl = document.getElementById("breakdown");
+    const retryBtn = document.getElementById("retryBtn");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const showHelpBtn = document.getElementById("showHelp");
+
+    // State
+    let order = [];
+    let i = 0;
+    let score = 0;
+    let history = [];
+
+    function shuffle(array){
+      const a = array.slice();
+      for (let j = a.length - 1; j > 0; j--){
+        const k = Math.floor(Math.random() * (j + 1));
+        [a[j], a[k]] = [a[k], a[j]];
+      }
+      return a;
+    }
+
+    function reset(shuffleStatements = true){
+      order = shuffleStatements ? shuffle(BANK.map((_, idx) => idx)) : BANK.map((_, idx) => idx);
+      i = 0;
+      score = 0;
+      history = [];
+      quizEl.style.display = "block";
+      resultEl.style.display = "none";
+      nextBtn.disabled = true;
+      render();
+    }
+
+    function getRationale(type, statement){
+      switch(type){
+        case "praise":
+          return `This is <strong>Praise</strong>—it positively evaluates fluent speech (e.g., “great”, “nice job”, “love”).`;
+        case "ack_fluent":
+          return `This is an <strong>Acknowledgement of fluent speech</strong>—a neutral description of fluency without praise.`;
+        case "ack_stuttered":
+          return `This is an <strong>Acknowledgement of stuttered speech</strong>—a neutral description of disfluency (e.g., “bumpy”, “stuttering”).`;
+        case "self_eval":
+          return `This is a <strong>Request for self-evaluation</strong>—it asks the speaker to judge their own speech.`;
+        case "self_correct":
+          return `This is a <strong>Request for self-correction</strong>—it asks for a retry with smoother speech.`;
+        default:
+          return "";
+      }
+    }
+
+    function render(){
+      const idx = order[i];
+      const item = BANK[idx];
+      statementEl.innerHTML = `<em>“${item.text}”</em>`;
+      feedbackEl.classList.remove("show");
+      feedbackEl.innerHTML = "";
+      nextBtn.disabled = true;
+      optionsEl.innerHTML = "";
+
+      // Update progress
+      const qNum = i + 1;
+      progressText.textContent = `Question ${qNum} of ${BANK.length}`;
+      const pct = Math.round((qNum - 1) / BANK.length * 100);
+      progressFill.style.width = `${pct}%`;
+      scoreText.textContent = `Score: ${score}`;
+
+      // Build options (same order each time to avoid confusion)
+      CATEGORIES.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "option";
+        btn.setAttribute("data-id", cat.id);
+        btn.innerHTML = `
+          <div class="title">${cat.label}</div>
+          <div class="desc">${cat.desc}</div>
+        `;
+        btn.addEventListener("click", () => onChoose(cat.id));
+        optionsEl.appendChild(btn);
+      });
+    }
+
+    function onChoose(choiceId){
+      // Prevent double answers
+      const buttons = Array.from(optionsEl.querySelectorAll(".option"));
+      if (buttons.some(b => b.disabled)) return;
+
+      const idx = order[i];
+      const item = BANK[idx];
+      const correctId = item.type;
+
+      // Mark buttons
+      buttons.forEach(b => b.disabled = true);
+      buttons.forEach(b => {
+        const id = b.getAttribute("data-id");
+        if (id === correctId) b.classList.add("correct");
+      });
+      const chosenBtn = buttons.find(b => b.getAttribute("data-id") === choiceId);
+      const correct = choiceId === correctId;
+      if (!correct && chosenBtn) chosenBtn.classList.add("incorrect");
+
+      // Score & History
+      if (correct) score++;
+      history.push({
+        index: i + 1,
+        text: item.text,
+        chosen: choiceId,
+        correct: correctId,
+        isCorrect: correct
+      });
+
+      // Feedback
+      feedbackEl.innerHTML = `
+        <span class="status" style="color:${correct ? 'var(--success)' : 'var(--danger)'};">
+          ${correct ? 'Correct!' : 'Not quite.'}
+        </span>
+        ${getRationale(correctId, item.text)}
+      `;
+      feedbackEl.classList.add("show");
+
+      // Enable next
+      nextBtn.disabled = false;
+      // Complete progress fill for this question
+      progressFill.style.width = `${Math.round((i + 1) / BANK.length * 100)}%`;
+      scoreText.textContent = `Score: ${score}`;
+    }
+
+    function next(){
+      if (i < BANK.length - 1){
+        i++;
+        render();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult(){
+      quizEl.style.display = "none";
+      resultEl.style.display = "block";
+      const total = BANK.length;
+      const pct = Math.round((score / total) * 100);
+      finalSummary.innerHTML = `
+        You scored <strong>${score}</strong> out of <strong>${total}</strong> (${pct}%).
+      `;
+
+      // Breakdown per category
+      const byCat = {};
+      CATEGORIES.forEach(c => byCat[c.id] = { label: c.label, correct: 0, attempted: 0 });
+      history.forEach(h => {
+        byCat[h.correct].attempted++;
+        if (h.isCorrect) byCat[h.correct].correct++;
+      });
+      const parts = Object.values(byCat).map(x => {
+        const p = x.attempted ? Math.round((x.correct / x.attempted) * 100) : 0;
+        return `<span class="pill" title="${x.correct}/${x.attempted} correct">${x.label}: <strong>${p}%</strong></span>`;
+      });
+      breakdownEl.innerHTML = parts.join(' ');
+
+      // Review table
+      reviewBody.innerHTML = "";
+      history.forEach((h, idx) => {
+        const tr = document.createElement("tr");
+        const catLabel = id => (CATEGORIES.find(c => c.id === id) || {}).label || id;
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${h.text}</td>
+          <td>${catLabel(h.chosen)}</td>
+          <td>${catLabel(h.correct)}</td>
+          <td>${h.isCorrect ? '<span class="badge ok">Correct</span>' : '<span class="badge no">Wrong</span>'}</td>
+        `;
+        reviewBody.appendChild(tr);
+      });
+    }
+
+    // Events
+    nextBtn.addEventListener("click", next);
+    retryBtn.addEventListener("click", () => reset(true));
+    shuffleBtn.addEventListener("click", () => reset(true));
+    showHelpBtn.addEventListener("click", () => {
+      const lines = CATEGORIES.map(c => `• ${c.label}: ${c.desc}`).join('\n');
+      alert("The 5 verbal contingencies:\n\n" + lines);
+    });
+
+    // Keyboard shortcuts (1–5 to select)
+    document.addEventListener("keydown", (e) => {
+      const n = Number(e.key);
+      if (n >= 1 && n <= 5 && quizEl.style.display !== "none"){
+        const btn = optionsEl.querySelectorAll(".option")[n - 1];
+        if (btn) btn.click();
+      }
+      if ((e.key === "Enter" || e.key === "ArrowRight") && !nextBtn.disabled){
+        nextBtn.click();
+      }
+    });
+
+    // Start
+    reset(true);
+  })();
+</script>
+</body>
+</html>
