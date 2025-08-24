@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Key fix: allow full-bleed with safe areas on iOS -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Lidcombe Verbal Contingencies Drill</title>
 <style>
   :root{
@@ -20,8 +21,14 @@
     --shadow: 0 10px 25px rgba(0,0,0,.18);
     --radius: 16px;
   }
+
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html { height: 100%; scroll-behavior: smooth; }
+
+  /* MOBILE FIXES:
+     - Use dynamic viewport height (svh/dvh) to account for browser chrome.
+     - Add safe-area padding for notches / home indicators.
+     - Allow vertical scrolling. */
   body{
     margin:0;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
@@ -30,11 +37,33 @@
       radial-gradient(1200px 800px at 80% -200px, rgba(0,194,255,.25), transparent 60%),
       radial-gradient(900px 700px at -200px 80%, rgba(108,92,231,.25), transparent 60%),
       linear-gradient(180deg, var(--bg), var(--bg2));
+
+    /* Let the page grow and scroll; center on large screens */
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:24px;
+
+    /* Dynamic viewport & safe areas */
+    min-height: 100svh;        /* modern mobile */
+    min-height: 100dvh;        /* fallback modern */
+    /* Fallback for older browsers still gets normal behavior */
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+
+    /* Ensure content isn't clipped when taller than viewport */
+    overflow-y:auto;
   }
+
+  /* On small screens, disable vertical centering so nothing gets cut off */
+  @media (max-width: 720px){
+    body{
+      align-items: flex-start;
+    }
+  }
+
   .app{
     width:min(900px, 100%);
   }
@@ -45,7 +74,7 @@
     overflow: hidden;
   }
   header{
-    padding: 22px 26px;
+    padding: clamp(16px, 3.3vw, 22px) clamp(18px, 3.5vw, 26px);
     background: linear-gradient(135deg, rgba(108,92,231,.15), rgba(0,194,255,.15));
     border-bottom: 1px solid rgba(0,0,0,.06);
   }
@@ -60,7 +89,7 @@
     font-size: clamp(13px, 1.5vw, 15px);
   }
   .progress{
-    margin: 18px 26px 0;
+    margin: 12px clamp(18px, 3.5vw, 26px) 0;
   }
   .progress-bar{
     height: 10px;
@@ -82,9 +111,10 @@
     margin-top: 8px;
     color: var(--muted);
     font-size: 13px;
+    padding: 0 clamp(18px, 3.5vw, 26px);
   }
   main{
-    padding: 26px;
+    padding: clamp(16px, 3.5vw, 26px);
   }
   .question{
     font-size: clamp(18px, 2.3vw, 22px);
@@ -100,7 +130,7 @@
   .hint{
     color: var(--muted);
     font-size: 14px;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
   .grid{
     display:grid;
@@ -130,16 +160,6 @@
     cursor: not-allowed;
     opacity: .9;
   }
-  .option .tag{
-    display:inline-block;
-    font-size: 12px;
-    color: #4c5a71;
-    background: #eaf2ff;
-    border: 1px solid #d9e6ff;
-    padding: 2px 8px;
-    border-radius: 999px;
-    margin-bottom: 6px;
-  }
   .option .title{
     font-weight: 600;
     color: #182235;
@@ -158,12 +178,13 @@
     background: linear-gradient(0deg, rgba(255,107,107,.07), rgba(255,107,107,.07)), #fff8f8;
   }
   .feedback{
-    margin-top: 16px;
-    padding: 14px 16px;
+    margin-top: 14px;
+    padding: 12px 14px;
     background: #f8fafc;
     border: 1px solid #e9eef6;
     border-radius: 12px;
     display:none;
+    font-size: 14px;
   }
   .feedback.show{ display:block; }
   .feedback .status{
@@ -174,7 +195,7 @@
     display:flex;
     justify-content: space-between;
     align-items:center;
-    margin-top: 18px;
+    margin-top: 16px;
     gap: 12px;
     flex-wrap: wrap;
   }
@@ -221,7 +242,7 @@
     font-size:12px;
   }
   .result{
-    padding: 26px;
+    padding: clamp(16px, 3.5vw, 26px);
     display:none;
   }
   .result h2{
@@ -265,13 +286,15 @@
     text-align:center;
     color:#cbd3e4;
     font-size: 12px;
-    margin-top: 14px;
+    margin-top: 10px;
+    /* Keep footer visible above the home indicator on iOS */
+    padding-bottom: env(safe-area-inset-bottom, 16px);
   }
 </style>
 </head>
 <body>
   <div class="app">
-    <div class="card">
+    <div class="card" id="card">
       <header>
         <h1>Lidcombe Verbal Contingencies Drill</h1>
         <p>Identify the verbal contingency used in each statement. <span class="pill" title="Praise, Self-eval, Ack. fluent, Ack. stuttered, Self-correction">5 types</span></p>
@@ -326,7 +349,6 @@
   (() => {
     "use strict";
 
-    // Category catalog
     const CATEGORIES = [
       { id: "praise", label: "Praise", desc: "Positive evaluation of smooth speech." },
       { id: "self_eval", label: "Request for self-evaluation", desc: "Asks the child to judge their own speech." },
@@ -335,7 +357,6 @@
       { id: "self_correct", label: "Request for self-correction", desc: "Asks the child to try again more smoothly." }
     ];
 
-    // 15 statements (3 per category)
     const BANK = [
       // Praise
       { text: "Great smooth talking!", type: "praise" },
@@ -359,7 +380,6 @@
       { text: "Please try ‘I want the red truck’ one more time with smooth speech.", type: "self_correct" },
     ];
 
-    // Elements
     const statementEl = document.getElementById("statement");
     const optionsEl = document.getElementById("options");
     const feedbackEl = document.getElementById("feedback");
@@ -375,8 +395,8 @@
     const retryBtn = document.getElementById("retryBtn");
     const shuffleBtn = document.getElementById("shuffleBtn");
     const showHelpBtn = document.getElementById("showHelp");
+    const cardEl = document.getElementById("card");
 
-    // State
     let order = [];
     let i = 0;
     let score = 0;
@@ -399,10 +419,10 @@
       quizEl.style.display = "block";
       resultEl.style.display = "none";
       nextBtn.disabled = true;
-      render();
+      render(true);
     }
 
-    function getRationale(type, statement){
+    function getRationale(type){
       switch(type){
         case "praise":
           return `This is <strong>Praise</strong>—it positively evaluates fluent speech (e.g., “great”, “nice job”, “love”).`;
@@ -419,7 +439,7 @@
       }
     }
 
-    function render(){
+    function render(scrollTop = false){
       const idx = order[i];
       const item = BANK[idx];
       statementEl.innerHTML = `<em>“${item.text}”</em>`;
@@ -428,14 +448,20 @@
       nextBtn.disabled = true;
       optionsEl.innerHTML = "";
 
-      // Update progress
       const qNum = i + 1;
       progressText.textContent = `Question ${qNum} of ${BANK.length}`;
       const pct = Math.round((qNum - 1) / BANK.length * 100);
       progressFill.style.width = `${pct}%`;
       scoreText.textContent = `Score: ${score}`;
 
-      // Build options (same order each time to avoid confusion)
+      // Build options
+      const CATEGORIES = [
+        { id: "praise", label: "Praise", desc: "Positive evaluation of smooth speech." },
+        { id: "self_eval", label: "Request for self-evaluation", desc: "Asks the child to judge their own speech." },
+        { id: "ack_fluent", label: "Acknowledgement of fluent speech", desc: "Neutral description of fluency." },
+        { id: "ack_stuttered", label: "Acknowledgement of stuttered speech", desc: "Neutral description of disfluency." },
+        { id: "self_correct", label: "Request for self-correction", desc: "Asks the child to try again more smoothly." }
+      ];
       CATEGORIES.forEach(cat => {
         const btn = document.createElement("button");
         btn.type = "button";
@@ -448,10 +474,14 @@
         btn.addEventListener("click", () => onChoose(cat.id));
         optionsEl.appendChild(btn);
       });
+
+      // Keep the top of the card visible when moving to the next question on mobile
+      if (scrollTop) {
+        try { cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+      }
     }
 
     function onChoose(choiceId){
-      // Prevent double answers
       const buttons = Array.from(optionsEl.querySelectorAll(".option"));
       if (buttons.some(b => b.disabled)) return;
 
@@ -459,7 +489,6 @@
       const item = BANK[idx];
       const correctId = item.type;
 
-      // Mark buttons
       buttons.forEach(b => b.disabled = true);
       buttons.forEach(b => {
         const id = b.getAttribute("data-id");
@@ -469,7 +498,6 @@
       const correct = choiceId === correctId;
       if (!correct && chosenBtn) chosenBtn.classList.add("incorrect");
 
-      // Score & History
       if (correct) score++;
       history.push({
         index: i + 1,
@@ -479,18 +507,15 @@
         isCorrect: correct
       });
 
-      // Feedback
       feedbackEl.innerHTML = `
         <span class="status" style="color:${correct ? 'var(--success)' : 'var(--danger)'};">
           ${correct ? 'Correct!' : 'Not quite.'}
         </span>
-        ${getRationale(correctId, item.text)}
+        ${getRationale(correctId)}
       `;
       feedbackEl.classList.add("show");
 
-      // Enable next
       nextBtn.disabled = false;
-      // Complete progress fill for this question
       progressFill.style.width = `${Math.round((i + 1) / BANK.length * 100)}%`;
       scoreText.textContent = `Score: ${score}`;
     }
@@ -498,7 +523,7 @@
     function next(){
       if (i < BANK.length - 1){
         i++;
-        render();
+        render(true);
       } else {
         showResult();
       }
@@ -509,18 +534,21 @@
       resultEl.style.display = "block";
       const total = BANK.length;
       const pct = Math.round((score / total) * 100);
-      finalSummary.innerHTML = `
-        You scored <strong>${score}</strong> out of <strong>${total}</strong> (${pct}%).
-      `;
+      finalSummary.innerHTML = `You scored <strong>${score}</strong> out of <strong>${total}</strong> (${pct}%).`;
 
       // Breakdown per category
-      const byCat = {};
-      CATEGORIES.forEach(c => byCat[c.id] = { label: c.label, correct: 0, attempted: 0 });
+      const CATS = {
+        praise: { label: "Praise", correct: 0, attempted: 0 },
+        self_eval: { label: "Request for self-evaluation", correct: 0, attempted: 0 },
+        ack_fluent: { label: "Acknowledgement of fluent speech", correct: 0, attempted: 0 },
+        ack_stuttered: { label: "Acknowledgement of stuttered speech", correct: 0, attempted: 0 },
+        self_correct: { label: "Request for self-correction", correct: 0, attempted: 0 },
+      };
       history.forEach(h => {
-        byCat[h.correct].attempted++;
-        if (h.isCorrect) byCat[h.correct].correct++;
+        CATS[h.correct].attempted++;
+        if (h.isCorrect) CATS[h.correct].correct++;
       });
-      const parts = Object.values(byCat).map(x => {
+      const parts = Object.values(CATS).map(x => {
         const p = x.attempted ? Math.round((x.correct / x.attempted) * 100) : 0;
         return `<span class="pill" title="${x.correct}/${x.attempted} correct">${x.label}: <strong>${p}%</strong></span>`;
       });
@@ -530,7 +558,7 @@
       reviewBody.innerHTML = "";
       history.forEach((h, idx) => {
         const tr = document.createElement("tr");
-        const catLabel = id => (CATEGORIES.find(c => c.id === id) || {}).label || id;
+        const catLabel = id => CATS[id]?.label || id;
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td>${h.text}</td>
@@ -540,18 +568,26 @@
         `;
         reviewBody.appendChild(tr);
       });
+
+      // Ensure results appear at the top on mobile
+      try { cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
     }
 
-    // Events
     nextBtn.addEventListener("click", next);
     retryBtn.addEventListener("click", () => reset(true));
     shuffleBtn.addEventListener("click", () => reset(true));
     showHelpBtn.addEventListener("click", () => {
-      const lines = CATEGORIES.map(c => `• ${c.label}: ${c.desc}`).join('\n');
+      const lines = [
+        '• Praise: Positive evaluation of smooth speech.',
+        '• Request for self-evaluation: Asks the child to judge their own speech.',
+        '• Acknowledgement of fluent speech: Neutral description of fluency.',
+        '• Acknowledgement of stuttered speech: Neutral description of disfluency.',
+        '• Request for self-correction: Asks the child to try again more smoothly.'
+      ].join('\n');
       alert("The 5 verbal contingencies:\n\n" + lines);
     });
 
-    // Keyboard shortcuts (1–5 to select)
+    // Keyboard shortcuts (1–5 to select; Enter/→ for next)
     document.addEventListener("keydown", (e) => {
       const n = Number(e.key);
       if (n >= 1 && n <= 5 && quizEl.style.display !== "none"){
